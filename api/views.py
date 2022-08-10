@@ -1,5 +1,5 @@
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListAPIView, CreateAPIView
+from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from django_filters.rest_framework import DjangoFilterBackend
@@ -49,3 +49,17 @@ class ProductCreate(CreateAPIView):
         except ValueError:
             raise ValidationError({"price": "A valid number is required"})
         return super().create(request, *args, **kwargs)
+
+
+class ProductDelete(DestroyAPIView):
+    queryset = Product.objects.all()
+    lookup_field = "id"
+
+    def delete(self, request, *args, **kwargs):
+        product_id = request.data.get("id")
+        response = super().delete(request, *args, **kwargs)
+        if response.status_code == 204:
+            # Clear product from the cache
+            from django.core.cache import cache
+            cache.delete(f"product_data_{product_id}")
+        return response
