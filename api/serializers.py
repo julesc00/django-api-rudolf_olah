@@ -59,7 +59,7 @@ class ProductSerializer(serializers.ModelSerializer):
             instance.description += b"; ".join(
                 validated_data["warranty"].readlines()
             ).decode()
-        return instance
+        return super().update(instance, validated_data)
 
 
 class ProductStatSerializer(serializers.Serializer):
