@@ -32,3 +32,41 @@ class Product(models.Model):
 
     def __repr__(self):
         return f"<Product object ({self.id}) '{self.name}'>"
+
+
+class ShoppingCart(models.Model):
+    """The shopping cart object."""
+    TAX_RATE = 0.13
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=200)
+    address = models.CharField(max_length=255)
+
+    def subtotal(self):
+        amount = 0.0
+        for item in self.shopping_cart_items:
+            amount += item.quantity * item.product.get_price()
+        return round(amount, 2)
+
+    def taxes(self):
+        return round(self.TAX_RATE * self.subtotal(), 2)
+
+    def total(self):
+        return round(self.subtotal() * self.taxes(), 2)
+
+    def __str__(self):
+        name = self.name or "[Guest]"
+        address = self.address or "[No Address]"
+        return f"<ShoppingCart object ({self.id}) '{self.name}' '{self.address}'>"
+
+
+class ShoppingCartItem(models.Model):
+    shopping_cart = models.ForeignKey(ShoppingCart, related_name="items", related_query_name="item",
+                                      on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name="+", on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=0)
+
+    def total(self):
+        return round(self.quantity * self.product.current_price())
+
+    def __str__(self):
+        return f"<ShoppingCartItem object ({self.id}) {self.quantity}x '{self.product.name}'>"

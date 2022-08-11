@@ -2,12 +2,14 @@ from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (ListAPIView, CreateAPIView,
+                                     RetrieveUpdateDestroyAPIView, GenericAPIView)
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
 
 from .models import Product
-from .serializers import ProductSerializer
+from .serializers import ProductSerializer, ProductStatSerializer
 
 
 class ProductsPagination(LimitOffsetPagination):
@@ -76,3 +78,19 @@ class ProductRetrieveUpdateDestroy(RetrieveUpdateDestroyAPIView):
             # Clear product from the cache
             cache.delete(f"product_data_{product_id}")
         return response
+
+
+class ProductStatsView(GenericAPIView):
+    lookup_field = "id"
+    serializer_class = ProductStatSerializer
+    queryset = Product.objects.all()
+
+    def get(self, request, format=None, id=None):
+        obj = self.get_object()
+        serializer = ProductStatSerializer({
+            "stats": {
+                "2022-01-01": [5, 10, 15],
+                "2022-01-02": [20, 1, 2]
+            }
+        })
+        return Response(serializer.data)
