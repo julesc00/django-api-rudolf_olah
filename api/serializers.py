@@ -24,6 +24,7 @@ class ProductSerializer(serializers.ModelSerializer):
     # Override the sale_start and sale_end, these `help_text` will show
     # in the rest_framework dashboard
     sale_start = serializers.DateTimeField(
+        required=False,
         input_formats=["%I:%M %p %d %B %Y"], format=None, allow_null=True,
         help_text="Accepted format is '12:01 PM 16 April 2022",
         style={
@@ -32,6 +33,7 @@ class ProductSerializer(serializers.ModelSerializer):
         }
     )
     sale_end = serializers.DateTimeField(
+        required=False,
         input_formats=["%I:%M %p %d %B %Y"], format=None, allow_null=True,
         help_text="Accepted format is '12:01 PM 16 April 2022",
         style={
@@ -59,7 +61,13 @@ class ProductSerializer(serializers.ModelSerializer):
             instance.description += b"; ".join(
                 validated_data["warranty"].readlines()
             ).decode()
-        return instance
+        return super().update(instance, validated_data)
+
+    def create(self, validated_data):
+        # I pop the warranty field since it's not part of the model and when
+        # running tests, if not removed, it'll create an error.
+        validated_data.pop("warranty")
+        return Product.objects.create(**validated_data)
 
 
 class ProductStatSerializer(serializers.Serializer):
